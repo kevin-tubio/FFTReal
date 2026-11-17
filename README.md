@@ -1,34 +1,37 @@
 ==============================================================================
 
         FFTReal
-        Version 2.00, 2005/10/18
+        Version 2.11
 
         Fourier transformation (FFT, IFFT) library specialised for real data
         Portable ISO C++
 
-        (c) Laurent de Soras <laurent.de.soras@club-internet.fr>
-        Object Pascal port (c) Frederic Vanmol <frederic@fruityloops.com>
+        Copyright (c) 1999-2010 Laurent de Soras
+        Object Pascal port (c) Frederic Vanmol
 
 ==============================================================================
+
+
+
+Contents:
+
+1. Legal
+2. Content
+3. Using FFTReal
+3.1 FFTReal - Length fixed at run-time
+3.2 FFTRealFixLen - Length fixed at compile-time
+3.3 Data organisation
+4. Compilation and testing
+5. History
+6. Contact
 
 
 
 1. Legal
 --------
 
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+FFTReal is distributed under the terms of the Do What The Fuck You Want To
+Public License. 
 
 Check the file license.txt to get full information about the license.
 
@@ -41,12 +44,12 @@ FFTReal is a library to compute Discrete Fourier Transforms (DFT) with the
 FFT algorithm (Fast Fourier Transform) on arrays of real numbers. It can
 also compute the inverse transform.
 
-You should find in this package a lot of files ; some of them are of interest:
-- readme.txt: you are reading it
-- FFTReal.h: FFT, length fixed at run-time
-- FFTRealFixLen.h: FFT, length fixed at compile-time
-- FFTReal.pas: Pascal implementation (working but not up-to-date)
-- stopwatch directory
+You should find in this package a lot of files ; some of them are of
+particular interest:
+- readme.txt          : you are reading it
+- ffft/FFTReal.h      : FFT, length fixed at run-time
+- ffft/FFTRealFixLen.h: FFT, length fixed at compile-time
+- delphi/FFTReal.pas  : Pascal implementation (working but not up-to-date)
 
 
 
@@ -56,7 +59,8 @@ You should find in this package a lot of files ; some of them are of interest:
 Important - if you were using older versions of FFTReal (up to 1.03), some
 things have changed. FFTReal is now a template. Therefore use FFTReal<float>
 or FFTReal<double> in your code depending on the application datatype. The
-flt_t typedef has been removed.
+flt_t typedef has been removed. And if you were previously using FFTReal 2.0,
+note that all the classes have moved to the ffft namespace.
 
 You have two ways to use FFTReal. In the first way, the FFT has its length
 fixed at run-time, when the object is instanciated. It means that you have
@@ -73,11 +77,12 @@ custom type). The constructor precompute a lot of things, so it may be a bit
 long. The parameter is the number of points used for the next FFTs. It must
 be a power of 2:
 
-   #include "FFTReal.h"
+   #include "ffft/FFTReal.h"
    ...
    long len = 1024;
    ...
-   FFTReal <float> fft_object (len);   // 1024-point FFT object constructed.
+   // 1024-point FFT object constructed.
+   ffft::FFTReal <float> fft_object (len);
 
 Then you can use this object to compute as many FFTs and IFFTs as you want.
 They will be computed very quickly because a lot of work has been done in the
@@ -110,19 +115,38 @@ the FFT length. The datatype is float; it can be changed by modifying the
 DataType typedef in FFTRealFixLenParam.h. As FFTReal class, it supports
 only floating-point types or equivalent.
 
-To instanciate the object, just proceed as below:
+Use is similar as the one of FFTReal. To instanciate the object, just proceed
+as indicated below:
 
-   #include "FFTRealFixLen.h"
+   #include "ffft/FFTRealFixLen.h"
    ...
-   FFTRealFixLen <10> fft_object; // 1024-point (2^10) FFT object constructed.
+   // 1024-point (2^10) FFT object constructed.
+   ffft::FFTRealFixLen <10> fft_object;
 
-Use is similar as the one of FFTReal.
+Warning: long FFT objects may take a very long time to compile, depending on
+the compiler and its optimisation options. If compilation time is too high,
+encapsulate the FFT object in a seprate class whose header doesn't need
+to include FFTRealFixLen.h, so you just have to compile the wrapper once
+and only link it the other times. For example (quick, dirty and incomplete):
+
+ffft/FFTWrapper.h:            | ffft/FFTWrapper.cpp:
+                              |
+class FFTWrapper              | #include "ffft/FFTRealFixLen.h"
+{                             | #include "ffft/FFTWrapper.h"
+public:                       |
+   FFTWrapper ();             | FFTWrapper::FFTWrapper ()
+   ~FFTWrapper ();            | :  _impl_ptr ((void*) new FTRealFixLen <10>)
+   void  do_fft (...);        | {
+   void  do_ifft (...);       | }
+private:                      |
+   void *_impl_ptr;           | ...
+}                             |
 
 
 3.3 Data organisation
 ---------------------
 
-Mathematically speaking, the formulas below show what does FFTReal:
+Mathematically speaking, DFT formulas below show what does FFTReal:
 
 do_fft() : f(k) = sum (p = 0, N-1, x(p) * exp (+j*2*pi*k*p/N))
 do_ifft(): x(k) = sum (p = 0, N-1, f(p) * exp (-j*2*pi*k*p/N))
@@ -176,15 +200,14 @@ computation noise.
 
 Drop the following files into your project or makefile:
 
-Array.*
-def.h
-DynArray.*
-FFTReal*.cpp
-FFTReal*.h*
-OscSinCos.*
+ffft/Array.*
+ffft/def.h
+ffft/DynArray.*
+ffft/FFTReal*.h*
+ffft/OscSinCos.*
 
 Other files are for testing purpose only, do not include them if you just need
-to use the library ; they are not needed to use FFTReal in your own programs.
+to use the library; they are not needed to use FFTReal in your own programs.
 
 FFTReal may be compiled in two versions: release and debug. Debug version
 has checks that could slow down the code. Define NDEBUG to set the Release
@@ -192,15 +215,15 @@ mode. For example, the command line to compile the test bench on GCC would
 look like:
 
 Debug mode:
-g++ -Wall -o fftreal_debug.exe *.cpp stopwatch/*.cpp
+g++ -Wall -I. -o ./fftreal_debug.exe ffft/test/*.cpp ffft/test/stopwatch/*.cpp
 
 Release mode:
-g++ -Wall -o fftreal_release.exe -DNDEBUG -O3 *.cpp stopwatch/*.cpp
+g++ -Wall -I. -o ./fftreal_release.exe -DNDEBUG -O3 ffft/test/*.cpp ffft/test/stopwatch/*.cpp
 
 It may be tricky to compile the test bench because the speed tests use the
 stopwatch sub-library, which is not that cross-platform. If you encounter
 any problem that you cannot easily fix while compiling it, edit the file
-test_settings.h and un-define the speed test macro. Remove the stopwatch
+ffft/test/conf.h and un-define the speed test macro. Remove the stopwatch
 directory from your source file list, too.
 
 If it's not done by default, you should activate the exception handling
@@ -211,13 +234,25 @@ in the client code. Also, the test bench requires Run-Time Type Information
 (RTTI) to be enabled in order to display the names of the tested classes -
 sometimes mangled, depending on the compiler.
 
-The test bench may take a long time to compile, especially in Release mode,
-because a lot of recursive templates are instanciated.
+Please note: the test bench may take an insane time to compile, especially in
+Release mode, because a lot of recursive templates are instanciated.
 
 
 
 5. History
 ----------
+
+v2.11 (2010.09.12)
+- The LGPL was not well suited to 100% template code, therefore I changed
+the license again. Everything is released under the WTFPL.
+- Removed warnings in the testcode on MSVC++ 8.0
+- Fixed the multiple definition linking error with template specialisations
+on GCC 4.
+
+v2.10 (2008.05.28)
+- Classes are now in the ffft namespace
+- Changed directory structure
+- Fixed compilation information in the documentation
 
 v2.00 (2005.10.18)
 - Turned FFTReal class into template (data type as parameter)
@@ -225,6 +260,7 @@ v2.00 (2005.10.18)
 - Trigonometric tables are size-limited in order to preserve cache memory;
 over a given size, sin/cos functions are computed on the fly.
 - Better test bench for accuracy and speed
+- Changed license to LGPL
 
 v1.03 (2001.06.15)
 - Thanks to Frederic Vanmol for the Pascal port (works with Delphi).
@@ -239,4 +275,19 @@ v1.01 (2000)
 
 v1.00 (1999.08.14)
 - First version released
+
+
+
+6. Contact
+----------
+
+Please address any comment, bug report or flame to:
+
+Laurent de Soras
+laurent.de.soras@free.fr
+http://ldesoras.free.fr
+
+For the Pascal port:
+Frederic Vanmol
+frederic@fruityloops.com
 
