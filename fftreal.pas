@@ -1,7 +1,7 @@
 (*****************************************************************************
 
         DIGITAL SIGNAL PROCESSING TOOLS
-        Version 1.02, 2001/03/27
+        Version 1.03, 2001/06/15
         (c) 1999 - Laurent de Soras
 
         FFTReal.h
